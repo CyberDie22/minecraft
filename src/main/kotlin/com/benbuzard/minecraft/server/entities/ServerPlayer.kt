@@ -2,7 +2,7 @@
 
 package com.benbuzard.minecraft.server.entities
 
-import com.benbuzard.minecraft.protocol.NetPacket
+//import com.benbuzard.minecraft.protocol.NetPacket
 import com.benbuzard.minecraft.protocol.ProtocolState
 import com.benbuzard.minecraft.protocol.handshake.c2s.C2SHandshakePacket
 import com.benbuzard.minecraft.protocol.status.c2s.C2SPingRequestPacket
@@ -12,25 +12,26 @@ import com.benbuzard.minecraft.protocol.status.s2c.StatusResponseJson
 import com.benbuzard.minecraft.protocol.utils.readVarInt
 import com.benbuzard.minecraft.server.MinecraftServer
 import io.ktor.network.sockets.*
+import io.ktor.utils.io.*
+import io.ktor.utils.io.core.*
 import io.ktor.utils.io.jvm.javaio.*
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import okio.*
 import java.util.*
 import kotlin.io.use
 import kotlin.text.HexFormat
 
 class ServerPlayer(val socket: Socket) {
     private var protocolState = ProtocolState.HANDSHAKE
-    private var packetQueue = mutableListOf<NetPacket>()
+//    private var packetQueue = mutableListOf<NetPacket>()
 
     suspend fun handlePacket(
-        source: BufferedSource,
-        sink: BufferedSink,
+        source: ByteReadChannel,
+        sink: ByteWriteChannel,
         packetId: Int,
-        packetData: Buffer
+        packetData: ByteArray
     ) = coroutineScope {
         val logger = MinecraftServer.instance.logger
 
@@ -39,7 +40,7 @@ class ServerPlayer(val socket: Socket) {
                 logger.trace("Received packet in handshake state")
                 when (packetId) {
                     0x00 -> {
-                        val packet = C2SHandshakePacket.read(packetData)
+                        val packet = C2SHandshakePacket.read(source)
                         logger.debug { "Packet: $packet" }
 
                         protocolState = when (packet.nextState) {
@@ -94,7 +95,7 @@ class ServerPlayer(val socket: Socket) {
                         responsePacket.write(sink)
                     }
                     0x01 -> {
-                        val packet = C2SPingRequestPacket.read(packetData)
+                        val packet = C2SPingRequestPacket.read(source)
                         logger.debug { "Packet: $packet" }
 
                         val responsePacket = S2CPongResponsePacket(packet.payload)
@@ -124,9 +125,12 @@ class ServerPlayer(val socket: Socket) {
             val recvChannel = socket.openReadChannel()
             val sendChannel = socket.openWriteChannel(autoFlush = true)
 
+            val source = recvChannel
+            val sink = sendChannel
+
             // TODO: only works on JVM
-            val source = recvChannel.toInputStream().source().buffer()
-            val sink = sendChannel.toOutputStream().sink().buffer()
+//            val source = recvChannel.toInputStream().source().buffer()
+//            val sink = sendChannel.toOutputStream().sink().buffer()
 
 //            launch {
                 while (true) {
@@ -142,10 +146,10 @@ class ServerPlayer(val socket: Socket) {
 
                     logger.trace("Waiting for content...")
 
-                    if (source.exhausted()) {
-                        logger.debug("Client $remoteAddress disconnected unexpectedly")
-                        break
-                    }
+//                    if (source.exhausted()) {
+//                        logger.debug("Client $remoteAddress disconnected unexpectedly")
+//                        break
+//                    }
 
                     logger.debug("Content available")
 
@@ -157,14 +161,16 @@ class ServerPlayer(val socket: Socket) {
                     val packetId = source.readVarInt()
                     logger.debug("Packet ID: $packetId")
 
-                    val packetData = Buffer()
-                    logger.trace("Reading packet data...")
-                    if (length > 1) source.read(packetData, (length - 1).toLong())
-                    logger.debug("Packet data length: ${packetData.size} bytes")
+////                    val packetData = Buffer()
+//                    val packetData = ByteArray(length - 1)
+//                    logger.trace("Reading packet data...")
+////                    if (length > 1) source.read(packetData, (length - 1).toLong())
+//                    if (length > 1) source.readFully(packetData)
+//                    logger.debug("Packet data length: ${packetData.size} bytes")
 
 //                    logger.debug("Adding packet with ID $packetId to queue")
 //                    packetQueue.add(NetPacket(packetId, packetData))
-                    handlePacket(source, sink, packetId, packetData)
+                    handlePacket(source, sink, packetId, byteArrayOf())
                 }
 //            }
 
