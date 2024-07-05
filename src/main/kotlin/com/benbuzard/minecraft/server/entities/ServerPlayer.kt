@@ -128,7 +128,7 @@ class ServerPlayer(val socket: Socket) {
             val source = recvChannel.toInputStream().source().buffer()
             val sink = sendChannel.toOutputStream().sink().buffer()
 
-            launch {
+//            launch {
                 while (true) {
                     if (socket.isClosed) {
                         logger.info("Client $remoteAddress disconnected")
@@ -162,32 +162,33 @@ class ServerPlayer(val socket: Socket) {
                     if (length > 1) source.read(packetData, (length - 1).toLong())
                     logger.debug("Packet data length: ${packetData.size} bytes")
 
-                    logger.debug("Adding packet with ID $packetId to queue")
-                    packetQueue.add(NetPacket(packetId, packetData))
+//                    logger.debug("Adding packet with ID $packetId to queue")
+//                    packetQueue.add(NetPacket(packetId, packetData))
+                    handlePacket(source, sink, packetId, packetData)
                 }
-            }
+//            }
 
-            launch {
-                while (true) {
-                    if (socket.isClosed) {
-                        logger.info("Client $remoteAddress disconnected (handling)")
-                        break
-                    }
-
-                    if (sendChannel.isClosedForWrite) {
-                        logger.info("Client $remoteAddress disconnected unexpectedly (handling), ${sendChannel.closedCause}")
-                        break
-                    }
-
-                    if (packetQueue.isEmpty()) {
-                        continue
-                    }
-
-                    val packet = packetQueue.removeFirst()
-                    logger.debug("Handling packet: $packet")
-                    handlePacket(source, sink, packet.id, packet.data)
-                }
-            }
+//            launch {
+//                while (true) {
+//                    if (socket.isClosed) {
+//                        logger.info("Client $remoteAddress disconnected (handling)")
+//                        break
+//                    }
+//
+//                    if (sendChannel.isClosedForWrite) {
+//                        logger.info("Client $remoteAddress disconnected unexpectedly (handling), ${sendChannel.closedCause}")
+//                        break
+//                    }
+//
+//                    if (packetQueue.isEmpty()) {
+//                        continue
+//                    }
+//
+//                    val packet = packetQueue.removeFirst()
+//                    logger.debug("Handling packet: $packet")
+//                    handlePacket(source, sink, packet.id, packet.data)
+//                }
+//            }
         }
     }
 }
