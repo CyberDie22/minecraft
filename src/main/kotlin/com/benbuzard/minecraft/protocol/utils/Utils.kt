@@ -2,23 +2,20 @@ package com.benbuzard.minecraft.protocol.utils
 
 import com.benbuzard.minecraft.server.MinecraftServer
 import io.ktor.utils.io.*
-//import okio.*
+import kotlinx.coroutines.runBlocking
+import kotlinx.io.*
+import java.nio.ByteBuffer
 import kotlin.experimental.and
 import kotlin.experimental.inv
-import kotlin.experimental.or
 
 const val VARINT_SEGMENT_BITS = 0x7F.toByte()
 const val VARINT_CONTINUE_BIT = 0x80.toByte()
 
-//suspend fun BufferedSource.readBoolean(): Boolean = readByte() != 0.toByte()
+
 
 suspend fun ByteReadChannel.readUByte(): UByte = readByte().toUByte()
 
 suspend fun ByteReadChannel.readUShort(): UShort = readShort().toUShort()
-
-//suspend fun BufferedSource.readFloat(): Float = Float.fromBits(readInt())
-
-//suspend fun BufferedSource.readDouble(): Double = Double.fromBits(readLong())
 
 suspend fun ByteReadChannel.readMCString(): String {
     val length = readVarInt()
@@ -52,6 +49,27 @@ suspend fun ByteWriteChannel.writeUByte(value: UByte) = writeByte(value.toByte()
 
 suspend fun ByteWriteChannel.writeUShort(value: UShort) = writeShort(value.toInt())
 
+suspend fun ByteWriteChannel.writeMCString(value: String) {
+    val bytes = value.toByteArray()
+    writeVarInt(bytes.size)
+    writeAvailable(bytes)
+}
+
+suspend fun ByteWriteChannel.writeVarInt(value: Int) {
+    var mutableValue = value
+    while (true) {
+        if ((mutableValue and VARINT_SEGMENT_BITS.inv().toInt()) == 0) {
+            writeByte(mutableValue)
+            return
+        }
+
+        writeByte((mutableValue and VARINT_SEGMENT_BITS.toInt()) or VARINT_CONTINUE_BIT.toInt())
+
+        // Note: ushr is the unsigned right shift operator in Kotlin
+        mutableValue = mutableValue ushr 7
+    }
+}
+
 fun MutableList<Byte>.writeUShort(value: UShort) {
     add((value.toInt() ushr 8).toByte())
     add(value.toByte())
@@ -68,36 +86,11 @@ fun MutableList<Byte>.writeLong(value: Long) {
     add(value.toByte())
 }
 
-//fun BufferedSink.writeFloat(value: Float) = writeInt(value.toBits())
-
-//fun BufferedSink.writeDouble(value: Double) = writeLong(value.toBits())
-
-suspend fun ByteWriteChannel.writeMCString(value: String) {
-    val bytes = value.toByteArray()
-    writeVarInt(bytes.size)
-    writeAvailable(bytes)
-}
-
 fun MutableList<Byte>.writeMCString(value: String) {
     val bytes = value.toByteArray()
     writeVarInt(bytes.size)
     addAll(bytes.toList())
 
-}
-
-suspend fun ByteWriteChannel.writeVarInt(value: Int) {
-    var mutableValue = value
-    while (true) {
-        if ((mutableValue and VARINT_SEGMENT_BITS.inv().toInt()) == 0) {
-            writeByte(mutableValue)
-            return
-        }
-
-        writeByte((mutableValue and VARINT_SEGMENT_BITS.toInt()) or VARINT_CONTINUE_BIT.toInt())
-
-        // Note: ushr is the unsigned right shift operator in Kotlin
-        mutableValue = mutableValue ushr 7
-    }
 }
 
 fun MutableList<Byte>.writeVarInt(value: Int) {

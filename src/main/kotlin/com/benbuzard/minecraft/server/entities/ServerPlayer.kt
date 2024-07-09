@@ -25,13 +25,12 @@ import kotlin.text.HexFormat
 
 class ServerPlayer(val socket: Socket) {
     private var protocolState = ProtocolState.HANDSHAKE
-//    private var packetQueue = mutableListOf<NetPacket>()
 
     suspend fun handlePacket(
         source: ByteReadChannel,
         sink: ByteWriteChannel,
-        packetId: Int,
-        packetData: ByteArray
+        socket: Socket,
+        packetId: Int
     ) = coroutineScope {
         val logger = MinecraftServer.instance.logger
 
@@ -76,7 +75,7 @@ class ServerPlayer(val socket: Socket) {
                                 online = 1,
                                 sample = listOf(
                                     StatusResponseJson.Players.Player(
-                                        name = "Minecraaftt",
+                                        name = "TestPlayer123",
                                         id = UUID.randomUUID().toString()
                                     )
                                 )
@@ -100,16 +99,19 @@ class ServerPlayer(val socket: Socket) {
 
                         val responsePacket = S2CPongResponsePacket(packet.payload)
                         logger.debug { "Writing packet: $responsePacket" }
-                        try {
-                            responsePacket.write(sink)
-                        } catch (e: IllegalStateException) {
-                            throw e
-                        }
+                        responsePacket.write(sink)
+
+                        socket.close()
                     }
                     else -> TODO("Unknown packet ID: 0x${packetId.toByte().toHexString(HexFormat.UpperCase)}")
                 }
             }
-            ProtocolState.LOGIN -> TODO()
+            ProtocolState.LOGIN -> {
+                logger.trace("Received packet in login state")
+                when (packetId) {
+                    else -> TODO("Unknown packet ID: 0x${packetId.toByte().toHexString(HexFormat.UpperCase)}")
+                }
+            }
             ProtocolState.TRANSFER -> TODO()
             ProtocolState.PLAY -> TODO()
         }
@@ -125,76 +127,33 @@ class ServerPlayer(val socket: Socket) {
             val recvChannel = socket.openReadChannel()
             val sendChannel = socket.openWriteChannel(autoFlush = true)
 
-            val source = recvChannel
-            val sink = sendChannel
-
-            // TODO: only works on JVM
-//            val source = recvChannel.toInputStream().source().buffer()
-//            val sink = sendChannel.toOutputStream().sink().buffer()
-
-//            launch {
-                while (true) {
-                    if (socket.isClosed) {
-                        logger.info("Client $remoteAddress disconnected")
-                        break
-                    }
-
-                    if (recvChannel.isClosedForRead) {
-                        logger.info("Client $remoteAddress disconnected unexpectedly, ${recvChannel.closedCause}")
-                        break
-                    }
-
-                    logger.trace("Waiting for content...")
-
-//                    if (source.exhausted()) {
-//                        logger.debug("Client $remoteAddress disconnected unexpectedly")
-//                        break
-//                    }
-
-                    logger.debug("Content available")
-
-                    logger.trace("Reading packet length...")
-                    val length = source.readVarInt()
-                    logger.debug("Packet length: $length")
-
-                    logger.trace("Reading packet ID...")
-                    val packetId = source.readVarInt()
-                    logger.debug("Packet ID: $packetId")
-
-////                    val packetData = Buffer()
-//                    val packetData = ByteArray(length - 1)
-//                    logger.trace("Reading packet data...")
-////                    if (length > 1) source.read(packetData, (length - 1).toLong())
-//                    if (length > 1) source.readFully(packetData)
-//                    logger.debug("Packet data length: ${packetData.size} bytes")
-
-//                    logger.debug("Adding packet with ID $packetId to queue")
-//                    packetQueue.add(NetPacket(packetId, packetData))
-                    handlePacket(source, sink, packetId, byteArrayOf())
+            while (true) {
+                if (socket.isClosed) {
+                    logger.info("Client $remoteAddress disconnected")
+                    break
                 }
-//            }
 
-//            launch {
-//                while (true) {
-//                    if (socket.isClosed) {
-//                        logger.info("Client $remoteAddress disconnected (handling)")
-//                        break
-//                    }
-//
-//                    if (sendChannel.isClosedForWrite) {
-//                        logger.info("Client $remoteAddress disconnected unexpectedly (handling), ${sendChannel.closedCause}")
-//                        break
-//                    }
-//
-//                    if (packetQueue.isEmpty()) {
-//                        continue
-//                    }
-//
-//                    val packet = packetQueue.removeFirst()
-//                    logger.debug("Handling packet: $packet")
-//                    handlePacket(source, sink, packet.id, packet.data)
-//                }
-//            }
+                if (recvChannel.isClosedForRead) {
+                    logger.info("Client $remoteAddress disconnected unexpectedly, ${recvChannel.closedCause}")
+                    break
+                }
+
+                logger.trace("Waiting for content...")
+
+                recvChannel.awaitContent()
+
+                logger.debug("Content available (${recvChannel.availableForRead} bytes)")
+
+                logger.trace("Reading packet length...")
+                val length = recvChannel.readVarInt()
+                logger.debug("Packet length: $length")
+
+                logger.trace("Reading packet ID...")
+                val packetId = recvChannel.readVarInt()
+                logger.debug("Packet ID: ${packetId.toByte().toHexString(HexFormat.UpperCase)}")
+
+                handlePacket(recvChannel, sendChannel, socket, packetId)
+            }
         }
     }
 }
