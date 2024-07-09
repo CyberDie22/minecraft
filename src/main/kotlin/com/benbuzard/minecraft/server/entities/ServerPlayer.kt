@@ -2,7 +2,6 @@
 
 package com.benbuzard.minecraft.server.entities
 
-//import com.benbuzard.minecraft.protocol.NetPacket
 import com.benbuzard.minecraft.protocol.ProtocolState
 import com.benbuzard.minecraft.protocol.handshake.c2s.C2SHandshakePacket
 import com.benbuzard.minecraft.protocol.status.c2s.C2SPingRequestPacket
@@ -10,13 +9,13 @@ import com.benbuzard.minecraft.protocol.status.s2c.S2CPongResponsePacket
 import com.benbuzard.minecraft.protocol.status.s2c.S2CStatusResponsePacket
 import com.benbuzard.minecraft.protocol.status.s2c.StatusResponseJson
 import com.benbuzard.minecraft.protocol.utils.readVarInt
+import com.benbuzard.minecraft.protocol.utils.toSink
+import com.benbuzard.minecraft.protocol.utils.toSource
 import com.benbuzard.minecraft.server.MinecraftServer
 import io.ktor.network.sockets.*
-import io.ktor.utils.io.*
-import io.ktor.utils.io.core.*
-import io.ktor.utils.io.jvm.javaio.*
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.io.*
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.util.*
@@ -27,8 +26,8 @@ class ServerPlayer(val socket: Socket) {
     private var protocolState = ProtocolState.HANDSHAKE
 
     suspend fun handlePacket(
-        source: ByteReadChannel,
-        sink: ByteWriteChannel,
+        source: RawSource,
+        sink: RawSink,
         socket: Socket,
         packetId: Int
     ) = coroutineScope {
@@ -127,6 +126,9 @@ class ServerPlayer(val socket: Socket) {
             val recvChannel = socket.openReadChannel()
             val sendChannel = socket.openWriteChannel(autoFlush = true)
 
+            val source = recvChannel.toSource()
+            val sink = sendChannel.toSink()
+
             while (true) {
                 if (socket.isClosed) {
                     logger.info("Client $remoteAddress disconnected")
@@ -145,14 +147,14 @@ class ServerPlayer(val socket: Socket) {
                 logger.debug("Content available (${recvChannel.availableForRead} bytes)")
 
                 logger.trace("Reading packet length...")
-                val length = recvChannel.readVarInt()
+                val length = source.readVarInt()
                 logger.debug("Packet length: $length")
 
                 logger.trace("Reading packet ID...")
-                val packetId = recvChannel.readVarInt()
-                logger.debug("Packet ID: ${packetId.toByte().toHexString(HexFormat.UpperCase)}")
+                val packetId = source.readVarInt()
+                logger.debug("Packet ID: 0x${packetId.toByte().toHexString(HexFormat.UpperCase)}")
 
-                handlePacket(recvChannel, sendChannel, socket, packetId)
+                handlePacket(source, sink, socket, packetId)
             }
         }
     }

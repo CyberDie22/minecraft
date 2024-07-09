@@ -1,33 +1,21 @@
 package com.benbuzard.minecraft.protocol
 
 import com.benbuzard.minecraft.protocol.utils.writeVarInt
-import io.ktor.utils.io.*
-import io.ktor.utils.io.core.*
-
-//import okio.Buffer
-//import okio.Sink
-//import okio.buffer
+import kotlinx.io.Buffer
+import kotlinx.io.RawSink
 
 interface MCPacket {
     val id: Int
-//    val idBuffer: Buffer
-    val idBuffer: MutableList<Byte>
+    val idBuffer: Buffer
 
-    suspend fun writeData(sink: MutableList<Byte>)
+    fun writeData(sink: RawSink)
 
-    suspend fun write(sink: ByteWriteChannel) {
-        val buffer = mutableListOf<Byte>()
+    fun write(sink: RawSink) {
+        val buffer = Buffer()
         writeData(buffer)
 
-//        sink.buffer().writeVarInt(buffer.size.toInt() + idBuffer.size.toInt())
-//        sink.buffer().writeVarInt(id)
-//        sink.buffer().writeAll(buffer)
-
-//        sink.buffer().use {
-            sink.writeVarInt(buffer.size.toInt() + idBuffer.size.toInt())
-            sink.writeVarInt(id)
-//            it.writeAll(buffer)
-            sink.writeFully(buffer.toByteArray())
-//        }
+        sink.writeVarInt(buffer.size.toInt() + idBuffer.size.toInt())
+        sink.writeVarInt(id)
+        sink.write(buffer, buffer.size)
     }
 }
