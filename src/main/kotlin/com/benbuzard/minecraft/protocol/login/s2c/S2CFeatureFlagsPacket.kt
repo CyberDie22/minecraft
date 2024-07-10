@@ -1,20 +1,22 @@
-package com.benbuzard.minecraft.protocol.status.s2c
+package com.benbuzard.minecraft.protocol.login.s2c
 
 import com.benbuzard.minecraft.protocol.ProtocolState
 import com.benbuzard.minecraft.protocol.S2CMCPacket
 import com.benbuzard.minecraft.annotations.S2CPacketInfo
-import com.benbuzard.minecraft.protocol.utils.readMCString
-import com.benbuzard.minecraft.protocol.utils.writeMCString
+import com.benbuzard.minecraft.protocol.utils.*
 import com.benbuzard.minecraft.server.entities.ServerPlayer
 import okio.Sink
 import okio.Source
 
-@S2CPacketInfo(id = 0x00, state = ProtocolState.Status)
-data class S2CStatusResponsePacket(
-    val jsonResponse: String
+@S2CPacketInfo(id = 0x02, state = ProtocolState.Login)
+data class S2CFeatureFlagsPacket(
+    val features: List<Identifier>,
 ) : S2CMCPacket {
     override fun writeData(sink: Sink) {
-        sink.writeMCString(jsonResponse)
+        sink.writeVarInt(features.size)
+        features.forEach {
+            sink.writeIdentifier(it)
+        }
     }
 
     override fun handle(source: Source, sink: Sink, player: ServerPlayer) {
@@ -23,9 +25,11 @@ data class S2CStatusResponsePacket(
 
     companion object {
         fun read(source: Source): S2CMCPacket {
-            val jsonResponse = source.readMCString()
+            val features = (0 until source.readVarInt()).map {
+                source.readIdentifier()
+            }
 
-            return S2CStatusResponsePacket(jsonResponse)
+            return S2CFeatureFlagsPacket(features)
         }
     }
 }

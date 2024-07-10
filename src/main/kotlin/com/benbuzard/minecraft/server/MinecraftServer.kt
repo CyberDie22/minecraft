@@ -1,5 +1,6 @@
 package com.benbuzard.minecraft.server
 
+import com.benbuzard.minecraft.registries.PacketRegistry
 import org.apache.logging.log4j.kotlin.logger
 import com.benbuzard.minecraft.server.entities.ServerPlayer
 import io.ktor.network.selector.*
@@ -12,6 +13,8 @@ class MinecraftServer(val address: String, val port: Int) {
     }
 
     val logger = logger("MinecraftServer")
+
+    val packetRegistry = PacketRegistry()
 
     private val selectorManager = SelectorManager(Dispatchers.IO)
 

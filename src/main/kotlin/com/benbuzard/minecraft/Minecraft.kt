@@ -1,5 +1,6 @@
 package com.benbuzard.minecraft
 
+import com.benbuzard.minecraft.annotations.C2SPacketInfo
 import com.benbuzard.minecraft.logging.Log4j2ConfigurationFactory
 import com.benbuzard.minecraft.server.MinecraftServer
 import org.apache.logging.log4j.LogManager
@@ -24,5 +25,6 @@ fun main() {
 
     val server = MinecraftServer("0.0.0.0", 25565)
     server.start()
+
     logger.info("Stopping server...")
 }

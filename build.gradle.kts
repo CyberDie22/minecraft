@@ -24,10 +24,12 @@ dependencies {
     implementation("org.apache.logging.log4j:log4j-slf4j2-impl")
     implementation("org.apache.logging.log4j:log4j-api-kotlin:1.4.0")
 
-//    implementation("com.squareup.okio:okio:3.9.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-io-core:0.4.0")
+    implementation("com.squareup.okio:okio:3.9.0")
+//    implementation("org.jetbrains.kotlinx:kotlinx-io-core:0.4.0")
 
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.0")
+
+    implementation("org.reflections:reflections:0.10.2")
 
     testImplementation(kotlin("test"))
 }
