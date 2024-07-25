@@ -22,7 +22,7 @@ data class S2CPongResponsePacket(
     }
 
     companion object {
-        fun read(source: Source): S2CMCPacket {
+        fun read(source: Source, packetSize: Int): S2CMCPacket {
             val payload = source.readLong()
 
             return S2CPongResponsePacket(payload)

@@ -34,7 +34,7 @@ data class C2SLoginStartPacket(
     }
 
     companion object {
-        fun read(source: Source): C2SMCPacket {
+        fun read(source: Source, packetSize: Int): C2SMCPacket {
             val username = source.readMCString()
             val uuid = source.readUUID()
 

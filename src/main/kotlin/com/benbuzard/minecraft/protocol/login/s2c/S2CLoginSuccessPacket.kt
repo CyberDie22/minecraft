@@ -36,7 +36,7 @@ data class S2CLoginSuccessPacket(
     }
 
     companion object {
-        fun read(source: Source): S2CMCPacket {
+        fun read(source: Source, packetSize: Int): S2CMCPacket {
             val uuid = source.readUUID()
             val username = source.readMCString()
             val properties = (0 until source.readVarInt()).map {

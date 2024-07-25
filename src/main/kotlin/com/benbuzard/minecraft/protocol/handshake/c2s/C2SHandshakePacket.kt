@@ -38,7 +38,7 @@ data class C2SHandshakePacket(
     }
 
     companion object {
-        fun read(source: Source): C2SMCPacket {
+        fun read(source: Source, packetSize: Int): C2SMCPacket {
             val protocolVersion = source.readVarInt()
             val serverAddress = source.readMCString()
             val serverPort = source.readUShort()

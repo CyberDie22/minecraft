@@ -27,7 +27,7 @@ data class C2SPingRequestPacket(
     }
 
     companion object {
-        fun read(source: Source): C2SMCPacket {
+        fun read(source: Source, packetSize: Int): C2SMCPacket {
             val payload = source.readLong()
 
             return C2SPingRequestPacket(payload)

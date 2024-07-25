@@ -8,7 +8,7 @@ import com.benbuzard.minecraft.server.entities.ServerPlayer
 import okio.Sink
 import okio.Source
 
-@S2CPacketInfo(id = 0x02, state = ProtocolState.Login)
+@S2CPacketInfo(id = 0x0C, state = ProtocolState.Login)
 data class S2CFeatureFlagsPacket(
     val features: List<Identifier>,
 ) : S2CMCPacket {
@@ -24,7 +24,7 @@ data class S2CFeatureFlagsPacket(
     }
 
     companion object {
-        fun read(source: Source): S2CMCPacket {
+        fun read(source: Source, packetSize: Int): S2CMCPacket {
             val features = (0 until source.readVarInt()).map {
                 source.readIdentifier()
             }

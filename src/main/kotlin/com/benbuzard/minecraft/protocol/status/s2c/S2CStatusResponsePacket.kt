@@ -22,7 +22,7 @@ data class S2CStatusResponsePacket(
     }
 
     companion object {
-        fun read(source: Source): S2CMCPacket {
+        fun read(source: Source, packetSize: Int): S2CMCPacket {
             val jsonResponse = source.readMCString()
 
             return S2CStatusResponsePacket(jsonResponse)

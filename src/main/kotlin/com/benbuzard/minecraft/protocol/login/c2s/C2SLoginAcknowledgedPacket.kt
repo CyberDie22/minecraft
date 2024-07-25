@@ -20,14 +20,30 @@ class C2SLoginAcknowledgedPacket : C2SMCPacket {
     override fun handle(source: Source, sink: Sink, player: ServerPlayer) {
         val logger = MinecraftServer.instance.logger
 
+        player.protocolState = ProtocolState.Configuration
+
         val responsePacket = S2CFeatureFlagsPacket(listOf(
             Identifier("minecraft", "vanilla")
         ))
         sink.writePacket(responsePacket)
     }
 
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+        return true
+    }
+
+    override fun hashCode(): Int {
+        return javaClass.hashCode()
+    }
+
+    override fun toString(): String {
+        return "C2SLoginAcknowledgedPacket()"
+    }
+
     companion object {
-        fun read(source: Source): C2SMCPacket {
+        fun read(source: Source, packetSize: Int): C2SMCPacket {
             return C2SLoginAcknowledgedPacket()
         }
     }

@@ -53,8 +53,22 @@ class C2SStatusRequestPacket : C2SMCPacket {
         sink.writePacket(responsePacket)
     }
 
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+        return true
+    }
+
+    override fun hashCode(): Int {
+        return javaClass.hashCode()
+    }
+
+    override fun toString(): String {
+        return "C2SStatusRequestPacket()"
+    }
+
     companion object {
-        fun read(source: Source): C2SMCPacket {
+        fun read(source: Source, packetSize: Int): C2SMCPacket {
             return C2SStatusRequestPacket()
         }
     }

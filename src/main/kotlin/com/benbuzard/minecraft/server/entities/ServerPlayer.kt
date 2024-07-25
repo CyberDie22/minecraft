@@ -12,6 +12,7 @@ import kotlinx.coroutines.launch
 
 class ServerPlayer(val socket: Socket) {
     var protocolState = ProtocolState.Handshake
+    var brand = "unknown"
 
     suspend fun handle() = coroutineScope {
         launch {
